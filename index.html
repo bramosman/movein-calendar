@@ -39,14 +39,20 @@
 <body class="bg-gray-50">
     <div id="app" class="w-full max-w-6xl mx-auto p-6 min-h-screen">
         <div class="mb-6">
-            <div class="flex items-center gap-3 mb-2">
-                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <h1 class="text-3xl font-bold text-gray-800">Post-Tour Move-In Dates</h1>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <h1 class="text-3xl font-bold text-gray-800">Post-Tour Move-In Dates</h1>
+                </div>
+                <div class="bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                    <div class="text-xs text-blue-600 uppercase tracking-wide font-semibold">Last Updated</div>
+                    <div id="lastUpdated" class="text-sm font-bold text-blue-800">10/21/2025</div>
+                </div>
             </div>
             <p class="text-gray-600">Total prospects with move-in dates: <span class="font-semibold text-blue-600" id="totalProspects">67</span></p>
         </div>
@@ -250,6 +256,11 @@
                         // Update total count
                         const totalProspects = Object.values(newProspectData).reduce((sum, arr) => sum + arr.length, 0);
                         document.getElementById('totalProspects').textContent = totalProspects;
+                        
+                        // Update last updated date
+                        const today = new Date();
+                        const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+                        document.getElementById('lastUpdated').textContent = formattedDate;
                         
                         // Refresh the view
                         updateView();
