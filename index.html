@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post-Tour Move-In Dates Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal.active {
+            display: block;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="w-full max-w-6xl mx-auto p-6 min-h-screen">
+        <div class="mb-6">
+            <div class="flex items-center gap-3 mb-2">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <h1 class="text-3xl font-bold text-gray-800">Post-Tour Move-In Dates</h1>
+            </div>
+            <p class="text-gray-600">Total prospects with move-in dates: <span class="font-semibold text-blue-600" id="totalProspects">67</span></p>
+        </div>
+
+        <!-- CSV Upload Section -->
+        <div class="mb-6 bg-white rounded-lg shadow-sm p-4 border-2 border-dashed border-gray-300">
+            <div class="flex items-center gap-4">
+                <div class="flex-1">
+                    <label for="csvUpload" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Update Calendar Data
+                    </label>
+                    <p class="text-xs text-gray-500 mb-2">Upload a new CSV export from HubSpot to refresh the calendar with latest prospect data</p>
+                    <input type="file" id="csvUpload" accept=".csv" class="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-600 file:text-white
+                        hover:file:bg-blue-700 file:cursor-pointer
+                        cursor-pointer">
+                </div>
+                <div id="uploadStatus" class="hidden">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </div>
+            <div id="uploadError" class="hidden mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600"></div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div class="flex gap-2">
+                <button id="monthViewBtn" class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-blue-600 text-white shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Month
+                </button>
+                <button id="yearViewBtn" class="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                    </svg>
+                    Year
+                </button>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button id="prevBtn" class="p-2 rounded-lg bg-white hover:bg-gray-100 transition-colors border border-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <h2 id="currentTitle" class="text-2xl font-semibold text-gray-800 min-w-[200px] text-center">October 2025</h2>
+                <button id="nextBtn" class="p-2 rounded-lg bg-white hover:bg-gray-100 transition-colors border border-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div id="calendarContent"></div>
+        </div>
+    </div>
+
+    <div id="prospectModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+                <div>
+                    <h2 id="modalTitle" class="text-2xl font-bold"></h2>
+                    <p id="modalSubtitle" class="text-blue-100 mt-1"></p>
+                </div>
+                <button id="closeModal" class="text-white hover:text-gray-200 transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="modalContent" class="p-6 overflow-y-auto" style="max-height: calc(80vh - 120px);"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script id="prospectDataScript" type="application/json">
+{"2026-01-12":[{"name":"Camila Cespedes","email":"camifkendall1203@icloud.com","phone":"+1 786 801 8192","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"Hot","postTourNote":"Camila came in with bf looking for one bedroom. currently live in wynwood and they loved the 04 model. we went up to 2904 after other units and they loved it. move in is in January, but i offered waived app and admin special if they apply from now til the end of the month and 1.5 months of 14 month lease. sending email with numbers and application link now"}],"2026-03-08":[{"name":"Luis Mendoza","email":"luiss.mendoza0765@gmail.com","phone":"+1 305 873 7052","stage":"Tour Complete","budget":"$2,501 - $3,000","temperature":"Cold","postTourNote":"Luis came in with his son looking for one bedroom. did not like high floors on 48, so we went down to 17 to look at lower floor and he liked that option. his lease doesn't end until March so I marked as cold prospect. will be reaching out in January to have him apply if he is still looking. was interested in building since he has seen the construction for awhile now. ran numbers with 1.5 months free on 14 month lease."},{"name":"Rene Pino","email":"rene17ai@gmail.com","phone":"+1 786 417 1170","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"Cold","postTourNote":"cold for now since late move-in date. Rene and gf came in looking for 1 bedroom options. They love it, but their lease ends in march where they are currently at, but they are trying to end lease early. their favorite was 4804 and we ran numbers on 3004 with concession of 1.5 months free on 14 month lease. reaching out via email with numbers, units requested and pricing sheet"}],"2026-02-01":[{"name":"Luis Luciano","email":"luisma1441@yahoo.com","phone":"+1 786 296 2621","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"Warm","postTourNote":"He was a big fan of the OnePlus den on floors two through eight. His lease is not up until February but he is highly considering moving to us from mural Brickell, which is a multifamily building nearby. He was a big fan of the community the wellness all the events we do here and I think he will apply, but probably not for another month or two because they're just starting their search."}],"2025-10-31":[{"name":"Tristan Duke","email":"tristanduke17@gmail.com","phone":"+1 651 200 7472","stage":"Tour Complete","budget":"Over $6,000","temperature":"Hot","postTourNote":"He came with his realtor Gabriel. He is moving from Dubai interested in securing 23 bedrooms next to each other I showed them both 5004  5005. He was a very big fan of the community the amenities and the apartment I told him for a limited time if he applied  24 hours because he could not apply same day because he had a  more stops and he did not want to we would give him two months free on a 14 month lease. He said he was very interested and would consider applying and told me to send him everything via email. The only other spot he was interested in is the echo condo community"},{"name":"Dennis Trivino","email":"trivino.dennis88@gmail.com","phone":"+1 305 998 9937","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2026-02-09":[{"name":"Jaewoo Lee","email":"laura.galvis@cbrealty.com","phone":"+1 786 693 3553","stage":"Tour Complete","budget":"Over $6,000","temperature":"Warm","postTourNote":"Jaewoo came in to tour with wife and realtor. he has a move-in date of mid february since he is relocating here from Korea. loved both options of 2 bed and den and 3 bedroom. both fit his budget of $7,500 so he is considering 3 bedroom. only issue is no credit, mentioned guarantors program which they did like the idea of so they are looking for cosigner also. sending email with all information to realtor"},{"name":"Alain Mazaira","email":"alainmazaira@yahoo.com","phone":"+1 305 799 6317","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"","postTourNote":""}],"2025-12-15":[{"name":"Azul Pettigiani","email":"azulpettigiani@gmail.com","phone":"+1 786 973 5374","stage":"Tour Complete","budget":"$5,501 - $6,000","temperature":"Warm","postTourNote":"Azul came in for a client with a budget of $6,000. she loved 2 bed and den and 2 bedroom. we ran numbers with concessions of 1.5 months on 14 month lease. she is going to speak with her clients and would like for me to send her and them an email. they have two cars so fees add up to $600 additional."},{"name":"Kelly Valencia","email":"kelly.oliverjk@gmail.com","phone":"+1 786 493 3455","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""},{"name":"Kristina Incutto","email":"kincutto@gmail.com","phone":"+1 774 212 4549","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""},{"name":"Larry Moore","email":"larrymoor@sbcglobal.net","phone":"+1 312 523 5079","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""},{"name":"David Wikins","email":"david.dinkins@nrc-consulting.com","phone":"+1 313 510 4371","stage":"Tour Complete","budget":"Under $2,000","temperature":"","postTourNote":""},{"name":"Karel Rodriguez","email":"miathskr@gmail.com","phone":"+1 786 572 4108","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""},{"name":"Josiah Boatwains","email":"josiah.boatwains@stu.bmcc.cuny.edu","phone":"+1 718 714 8535","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""},{"name":"Jose Rojas","email":"bookjoserojas@gmail.com","phone":"+1 305 773 0165","stage":"Tour Complete","budget":"$2,001 - $2,500","temperature":"","postTourNote":""},{"name":"Jim Agnew","email":"jimagnewrn@hotmail.com","phone":"+1 305 498 2283","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"","postTourNote":""},{"name":"Eric Lehman","email":"lehmer16@gmail.com","phone":"+1 617 932 9602","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""},{"name":"Gustavo Ibarra","email":"gibarra29@gmail.com","phone":"+1 786 431 6200","stage":"Tour Complete","budget":"$2,501 - $3,000","temperature":"","postTourNote":""},{"name":"Moraima Sánchez","email":"moraimajacanamijoy@gmail.com","phone":"+1 786 779 6288","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2025-11-30":[{"name":"Yuly Muro","email":"ymuro@joltcapitalusa.com","phone":"+1 786 953 2557","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"Warm","postTourNote":"Prospect lives in Brickell on the river heard about Flo came to check us out. Like the 05 layout the most they did not like  other one bedroom layout with the concession. It came right into their budgetrange, but they didn't want to go check out for Miami because they felt like the  was missing a little bit of the life and they were looking forsomething ready to move into that had a lot of energy and vibes from the  they move in understands it's a brand new building in the future of it, but they wanted to check out Flo Miami before making any  decisions."}],"2025-11-01":[{"name":"Pamela Marq","email":"pame101@hotmail.com","phone":"+1 617 319 4655","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"Warm","postTourNote":"Pamela toured and had a budget of 3500. She liked 2/2 and larger 1/1 options. Offered her 1.5 on 14 month lease but she did ask for 2. Told her application would need to be received by tomorrow if she wanted 2 months. She said she is going to speak with her husband if he would consider a 1/1 and she will get back to me around 4pm today"},{"name":"Mara ViscArra","email":"ma34-lui@hotmail.com","phone":"+1 786 376 5854","stage":"Tour Complete","budget":"$4,001 - $4,500","temperature":"Cold","postTourNote":"Lives in Brickell currently was interested in a two bedroom. She was very underwhelmed by the living room space in our two bed type an and thought our prices were too expensive for what they offer. She was upset because if she were to take that two bedroom, she didn't really to cook in that kitchen without you know getting smells and affecting people sitting in our living room. She also was not a fan of the valley parking system, but said she would talk it over with her roommate, but said there were other alternatives in the area with much more space. And better prices."},{"name":"Fernanda Urtubia","email":"fer_urt@icloud.com","phone":"+1 754 837 0213","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"Hot","postTourNote":"Likes the 04 layout the best because she likes Bay views said she can't make a decision until she tours the other flow property once more squarefootage for her money budget is 35 all in with a parking spacewhich is doable objected to valet because she needs to be on the go tried to reassure her that we have a very good valet system and it's themost economical"},{"name":"Karina Dunaeva","email":"karinadunaeva1995@gmail.com","phone":"+1 706 309 1788","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"Hot","postTourNote":"J"},{"name":"Felix Varsin","email":"felixvarsin@gmail.com","phone":"954 406 7015","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2026-03-01":[{"name":"Andres Serna","email":"andresserna@me.com","phone":"+1 786 333 7970","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"Cold","postTourNote":"Moving at the beginning of March for sure but is considering selling their condo so they don't really have a solid move-in date but can't move  before March did not really like the old one or 13 stack for twobedrooms wants to be under 4K all in with two parking spaces really likes the building so they might consider going over budget but can't decide until the beginning of the year"}],"2025-12-13":[{"name":"Talita Oliveira","email":"talita_tavares@hotmail.com","phone":"+1 718 288 2130","stage":"Tour Complete","budget":"$2,501 - $3,000","temperature":"Warm","postTourNote":"Interested in a one bedroom did not like the 09 because it's way smaller than her current apartment and more expensive might consider the 04  wishes it was on the side with the city view wants to beunder 3K all in with a parking space doesn't really like that our valet isthe most economical parking option came with realtor"}],"2025-10-25":[{"name":"Isaac Rodriguez","email":"isaacptg365@icloud.com","phone":"+17865573091","stage":"Tour Complete","budget":"Over $6,000","temperature":"Hot","postTourNote":"Samanthas retour; applied for 5405."},{"name":"Maanil Dodani","email":"maanildodani@gmail.com","phone":"+1 773 744 3035","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"","postTourNote":""},{"name":"Jonessa Guarino","email":"jg@doublelgroup.com","phone":"+1 305 504 1289","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"","postTourNote":""}],"2026-03-31":[{"name":"Isabella Tessarolo","email":"tessaroloisabella@gmail.com","phone":"+1 786 605 2293","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"Cold","postTourNote":"Moving at the end end of March really liked the old one layout would be interested if it fit. Their budget of 4K lives at men to currently they will get the renewal offer in about a month and if the rent stays the same, they most likely will stay at mint, but if it goes up and there's no negotiation, they'll consider moving over into the oh one because they like flow vibes."}],"2025-10-21":[{"name":"Elie Dessalines","email":"eliedessalines@gmail.com","phone":"+1 305 988 1287","stage":"Tour Complete","budget":"Under $2,000","temperature":"Cold","postTourNote":"Cold: Realtor getting content. He said he will come back in December. Once the amenities are complete."}],"2025-12-01":[{"name":"Ryan Jacobs","email":"ryan.jacobsa@gmail.com","phone":"+1 804 627 1251","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"Hot","postTourNote":"Hot Lead: L.S Samantha toured couple who are current residents of Solitaire they just received their renewal letter and even though it is convenient to stay they want to see what else is out there. Love the amenities and concept of flow. Looking to get the best deal possible but just started their search."},{"name":"Gizela Menezes","email":"gizela.menezes@gmail.com","phone":"+1 786 931 1131","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"","postTourNote":""},{"name":"Tuhin Chakraborty","email":"tuhin.c@gmail.com","phone":"","stage":"Application in Progress","budget":"$3,501 - $4,000","temperature":"","postTourNote":""},{"name":"Brett Baker","email":"brettbaker@utexas.edu","phone":"+1 561 779 0868","stage":"Tour Complete","budget":"Over $6,000","temperature":"","postTourNote":""}],"2025-10-26":[{"name":"Amelie Cunin","email":"amelie.sidehustle@gmail.com","phone":"+19174239563","stage":"Tour Complete","budget":"$4,501 - $5,000","temperature":"Hot","postTourNote":"Hot Lead: L.S. Samantha is touring a couple who are relocating from Brooklyn, New York. They are very impressed with the community, especially the open flow of the floor plans, the furnishings, and the nearby farmers market. Wellness is a big priority for them, and since both work remotely, they truly value amenities like the sauna, cold plunge that we are adding, and the hot tub, which was a must-have for her and she is very pleased with it. They are looking for a two bedroom layout and are comfortable with anything under $5000 per month"},{"name":"Markeith Rowley","email":"markarowley@consultant.com","phone":"+1 202 445 3070","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2026-02-15":[{"name":"Samuel Romero","email":"romerosabraham@gmail.com","phone":"+1 305 497 5053","stage":"Tour Complete","budget":"Under $2,000","temperature":"","postTourNote":""},{"name":"Tess Chang","email":"tess.chang.tc@gmail.com","phone":"+1 914 714 2362","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""},{"name":"Sean Rockabrand","email":"sean@rockabrandsecurity.com","phone":"+1 305 522 9969","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2026-01-05":[{"name":"Elton Ewing","email":"builttowin32@gmail.com","phone":"+1 832 723 9538","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""}],"2026-01-15":[{"name":"Torrey Becote","email":"torreybecote@gmail.com","phone":"+1 561 762 1262","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""},{"name":"Katherine Navarro","email":"cathas20navarro@gmal.com","phone":"+1 786 282 0846","stage":"Tour Complete","budget":"$2,001 - $2,500","temperature":"","postTourNote":""},{"name":"Alexandre De Sousa","email":"ktyk11@gmail.com","phone":"+1 954 701 0591","stage":"Tour Complete","budget":"$2,501 - $3,000","temperature":"","postTourNote":""},{"name":"Leo Everson","email":"leoeverson@gmail.com","phone":"+1 703 371 9894","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2025-11-15":[{"name":"Clay Lake","email":"clayplake1@gmail.com","phone":"+1 616 446 5521","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"","postTourNote":""},{"name":"Yuliana Leon Lopez","email":"leonlopez.yuliana@gmail.com","phone":"+1 305 680 7081","stage":"Tour Complete","budget":"$2,001 - $2,500","temperature":"","postTourNote":""},{"name":"Samuel Ospina","email":"samuel.ospina1205@gmail.com","phone":"+1 305 850 8113","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"","postTourNote":""},{"name":"Radoslava Murrugarra","email":"tomkova.radoslava@gmail.com","phone":"+1 786 642 1356","stage":"Tour Complete","budget":"Under $2,000","temperature":"","postTourNote":""},{"name":"Daniel Monte","email":"danieljmonte@gmail.com","phone":"+1 718 930 7583","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"","postTourNote":""}],"2026-01-25":[{"name":"Gilberto Conrado","email":"gando551@yahoo.com","phone":"+1 1 786 856 9962","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"","postTourNote":""},{"name":"Christian Valencia","email":"christianvalenciav@outlook.com","phone":"+1 305 440 7129","stage":"Tour Complete","budget":"$2,501 - $3,000","temperature":"","postTourNote":""}],"2025-12-31":[{"name":"Natalie Saldarriaga Alicea","email":"nataliealicea@aol.com","phone":"+1 1 954 225 6979","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"","postTourNote":""}],"2026-03-15":[{"name":"Sandra Rubio","email":"rubio.violin@gmail.com","phone":"+1 786 444 4723","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""},{"name":"Linus Horn","email":"lehorn@icloud.com","phone":"+1 617 256 0887","stage":"Tour Complete","budget":"$3,501 - $4,000","temperature":"","postTourNote":""}],"2025-11-05":[{"name":"Diana Sabb","email":"dianasabb@gmail.com","phone":"+19493790892","stage":"Application in Progress","budget":"","temperature":"","postTourNote":""}],"2026-05-15":[{"name":"Anelya Satybaldy","email":"azmametova1@gmail.com","phone":"+1 347 977 0960","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2025-11-25":[{"name":"Mufid Farha","email":"mufid.farha@gmail.com","phone":"+1 734 730 0454","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""}],"2025-11-02":[{"name":"Marc Kessler","email":"marc@m10ventures.io","phone":"+1 617 519 4496","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""}],"2026-06-15":[{"name":"Gerald Eaton","email":"geraldeaton71@gmail.com","phone":"+1 213 280 8482","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2025-12-25":[{"name":"Von Clinton","email":"vonclinton54@yahoo.com","phone":"+1 786 486 6331","stage":"Tour Complete","budget":"$3,001 - $3,500","temperature":"","postTourNote":""}],"2025-10-15":[{"name":"Scott Shuldiner","email":"sshuldiner@gmail.com","phone":"+1 443 472 2760","stage":"Tour Complete","budget":"Over $4,000","temperature":"","postTourNote":""},{"name":"Chi Onyeocha","email":"carmydoll888@gmail.com","phone":"+1 917 767 5415","stage":"Tour Complete","budget":"Under $2,000","temperature":"","postTourNote":""}],"2025-10-01":[{"name":"Carlos Romero","email":"naiaralycarlosr@gmail.com","phone":"+1 786 354 8201","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}],"2025-02-15":[{"name":"Shreyas Gavit","email":"shreyasgavit11@gmail.com","phone":"+1 321 536 5453","stage":"Tour Complete","budget":"","temperature":"","postTourNote":""}]}
+    </script>
+
+    <script>
+        let prospectData = JSON.parse(document.getElementById('prospectDataScript').textContent);
+        let moveInData = [
+            { date: "2025-02-15", count: 1 },
+            { date: "2025-10-01", count: 1 },
+            { date: "2025-10-15", count: 2 },
+            { date: "2025-10-21", count: 1 },
+            { date: "2025-10-25", count: 3 },
+            { date: "2025-10-26", count: 2 },
+            { date: "2025-10-31", count: 2 },
+            { date: "2025-11-01", count: 5 },
+            { date: "2025-11-02", count: 1 },
+            { date: "2025-11-05", count: 1 },
+            { date: "2025-11-15", count: 5 },
+            { date: "2025-11-25", count: 1 },
+            { date: "2025-11-30", count: 1 },
+            { date: "2025-12-01", count: 4 },
+            { date: "2025-12-13", count: 1 },
+            { date: "2025-12-15", count: 12 },
+            { date: "2025-12-25", count: 1 },
+            { date: "2025-12-31", count: 1 },
+            { date: "2026-01-05", count: 1 },
+            { date: "2026-01-12", count: 1 },
+            { date: "2026-01-15", count: 4 },
+            { date: "2026-01-25", count: 2 },
+            { date: "2026-02-01", count: 1 },
+            { date: "2026-02-09", count: 2 },
+            { date: "2026-02-15", count: 3 },
+            { date: "2026-03-01", count: 1 },
+            { date: "2026-03-08", count: 2 },
+            { date: "2026-03-15", count: 2 },
+            { date: "2026-03-31", count: 1 },
+            { date: "2026-05-15", count: 1 },
+            { date: "2026-06-15", count: 1 }
+        ];
+
+        let currentDate = new Date(2025, 9, 1);
+        let currentView = 'month';
+
+        let monthlyTotals = {};
+        
+        function calculateMonthlyTotals() {
+            monthlyTotals = {};
+            moveInData.forEach(item => {
+                const date = new Date(item.date);
+                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                monthlyTotals[key] = (monthlyTotals[key] || 0) + item.count;
+            });
+        }
+        
+        calculateMonthlyTotals();
+
+        // CSV Upload Handler
+        document.getElementById('csvUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadError = document.getElementById('uploadError');
+            uploadStatus.classList.add('hidden');
+            uploadError.classList.add('hidden');
+
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    try {
+                        // Process the CSV data
+                        const newProspectData = {};
+                        const dateCount = {};
+                        
+                        results.data.forEach(row => {
+                            const moveInDate = row['Post-Tour Move In Date'];
+                            if (!moveInDate) return;
+                            
+                            const date = new Date(moveInDate);
+                            const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                            
+                            if (!newProspectData[dateStr]) {
+                                newProspectData[dateStr] = [];
+                            }
+                            
+                            newProspectData[dateStr].push({
+                                name: (row['Prospect Name'] || 'Unknown').toString().trim(),
+                                email: (row['Sign Up Email'] || '').toString().trim(),
+                                phone: (row['Sign Up Phone Number'] || '').toString().trim(),
+                                stage: (row['Prospect pipeline stage'] || '').toString().trim(),
+                                budget: (row['Post-Tour Budget'] || row['Budget'] || '').toString().trim(),
+                                temperature: (row['Post-Tour Prospect Temperature'] || '').toString().trim(),
+                                postTourNote: (row['Post-Tour Note'] || '').toString().trim()
+                            });
+                            
+                            dateCount[dateStr] = (dateCount[dateStr] || 0) + 1;
+                        });
+                        
+                        // Update moveInData
+                        moveInData = Object.entries(dateCount)
+                            .map(([date, count]) => ({ date, count }))
+                            .sort((a, b) => new Date(a.date) - new Date(b.date));
+                        
+                        // Update prospectData
+                        prospectData = newProspectData;
+                        
+                        // Recalculate monthly totals
+                        calculateMonthlyTotals();
+                        
+                        // Update total count
+                        const totalProspects = Object.values(newProspectData).reduce((sum, arr) => sum + arr.length, 0);
+                        document.getElementById('totalProspects').textContent = totalProspects;
+                        
+                        // Refresh the view
+                        updateView();
+                        
+                        // Show success
+                        uploadStatus.classList.remove('hidden');
+                        setTimeout(() => uploadStatus.classList.add('hidden'), 3000);
+                        
+                    } catch (error) {
+                        uploadError.textContent = 'Error processing CSV: ' + error.message;
+                        uploadError.classList.remove('hidden');
+                    }
+                },
+                error: function(error) {
+                    uploadError.textContent = 'Error reading CSV file: ' + error.message;
+                    uploadError.classList.remove('hidden');
+                }
+            });
+        });
+
+        function showProspectModal(dateStr, prospects) {
+            const modal = document.getElementById('prospectModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalSubtitle = document.getElementById('modalSubtitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            const date = new Date(dateStr);
+            const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            modalTitle.textContent = formattedDate;
+            modalSubtitle.textContent = `${prospects.length} ${prospects.length === 1 ? 'Prospect' : 'Prospects'}`;
+            
+            let html = '<div class="space-y-4">';
+            prospects.forEach((prospect, index) => {
+                const tempColor = prospect.temperature === 'Hot' ? 'bg-red-100 text-red-800' : 
+                                 prospect.temperature === 'Warm' ? 'bg-orange-100 text-orange-800' : 
+                                 'bg-blue-100 text-blue-800';
+                
+                html += `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-semibold text-gray-900">${prospect.name}</h3>
+                            ${prospect.temperature ? `<span class="px-2 py-1 text-xs font-semibold rounded ${tempColor}">${prospect.temperature}</span>` : ''}
+                        </div>
+                        <div class="space-y-1 text-sm text-gray-600">
+                            ${prospect.email ? `<div class="flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                <a href="mailto:${prospect.email}" class="text-blue-600 hover:underline">${prospect.email}</a>
+                            </div>` : ''}
+                            ${prospect.phone ? `<div class="flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                </svg>
+                                <a href="tel:${prospect.phone}" class="text-blue-600 hover:underline">${prospect.phone}</a>
+                            </div>` : ''}
+                            ${prospect.stage ? `<div class="flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <span>${prospect.stage}</span>
+                            </div>` : ''}
+                            ${prospect.budget ? `<div class="flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>${prospect.budget}</span>
+                            </div>` : ''}
+                            ${prospect.postTourNote ? `<div class="flex items-start gap-2 mt-2 pt-2 border-t border-gray-200">
+                                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Post-Tour Note</div>
+                                    <div class="text-sm text-gray-700">${prospect.postTourNote}</div>
+                                </div>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            modalContent.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function showMonthProspects(year, month) {
+            const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            const monthProspects = [];
+            moveInData.forEach(item => {
+                const itemDate = new Date(item.date);
+                if (itemDate.getFullYear() === year && itemDate.getMonth() === month) {
+                    const prospects = prospectData[item.date] || [];
+                    prospects.forEach(p => {
+                        monthProspects.push({...p, moveInDate: item.date});
+                    });
+                }
+            });
+
+            if (monthProspects.length === 0) {
+                return;
+            }
+
+            const modal = document.getElementById('prospectModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalSubtitle = document.getElementById('modalSubtitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalTitle.textContent = monthName;
+            modalSubtitle.textContent = `${monthProspects.length} ${monthProspects.length === 1 ? 'Prospect' : 'Prospects'}`;
+            
+            const byDate = {};
+            monthProspects.forEach(p => {
+                if (!byDate[p.moveInDate]) byDate[p.moveInDate] = [];
+                byDate[p.moveInDate].push(p);
+            });
+
+            let html = '<div class="space-y-6">';
+            Object.entries(byDate).sort().forEach(([date, prospects]) => {
+                const d = new Date(date);
+                const formattedDate = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                
+                html += `<div>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase mb-3">${formattedDate} (${prospects.length})</h3>
+                    <div class="space-y-3">`;
+                
+                prospects.forEach(prospect => {
+                    const tempColor = prospect.temperature === 'Hot' ? 'bg-red-100 text-red-800' : 
+                                     prospect.temperature === 'Warm' ? 'bg-orange-100 text-orange-800' : 
+                                     'bg-blue-100 text-blue-800';
+                    
+                    html += `
+                        <div class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-semibold text-gray-900">${prospect.name}</h4>
+                                ${prospect.temperature ? `<span class="px-2 py-1 text-xs font-semibold rounded ${tempColor}">${prospect.temperature}</span>` : ''}
+                            </div>
+                            <div class="space-y-1 text-xs text-gray-600">
+                                ${prospect.email ? `<div>${prospect.email}</div>` : ''}
+                                ${prospect.budget ? `<div>${prospect.budget}</div>` : ''}
+                                ${prospect.postTourNote ? `<div class="mt-2 pt-2 border-t border-gray-200">
+                                    <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Note</div>
+                                    <div class="text-xs text-gray-700">${prospect.postTourNote}</div>
+                                </div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            });
+            html += '</div>';
+            
+            modalContent.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function getMoveInCount(year, month, day) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const found = moveInData.find(d => d.date.startsWith(dateStr));
+            return found ? found.count : 0;
+        }
+
+        function getIntensityColor(count) {
+            if (count === 0) return 'bg-gray-50 hover:bg-gray-100';
+            if (count === 1) return 'bg-blue-100 hover:bg-blue-200';
+            if (count <= 3) return 'bg-blue-300 hover:bg-blue-400';
+            if (count <= 5) return 'bg-blue-500 hover:bg-blue-600 text-white';
+            return 'bg-blue-700 hover:bg-blue-800 text-white';
+        }
+
+        function renderMonthView() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+
+            let html = '<div class="grid grid-cols-7 gap-2 mb-2">';
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                html += `<div class="text-center font-semibold text-gray-600 text-sm py-2">${day}</div>`;
+            });
+            html += '</div><div class="grid grid-cols-7 gap-2">';
+
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                html += '<div class="aspect-square"></div>';
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const count = getMoveInCount(year, month, day);
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasProspects = prospectData[dateStr] && prospectData[dateStr].length > 0;
+                const clickHandler = hasProspects ? `onclick="handleDayClick('${dateStr}')"` : '';
+                const cursorClass = hasProspects ? 'cursor-pointer' : '';
+                
+                html += `<div ${clickHandler} class="aspect-square flex flex-col items-center justify-center rounded-lg border border-gray-200 transition-all ${cursorClass} ${getIntensityColor(count)}">
+                    <div class="text-sm font-semibold">${day}</div>
+                    ${count > 0 ? `<div class="text-xs mt-1">${count}</div>` : ''}
+                </div>`;
+            }
+
+            html += '</div>';
+            html += `<div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 class="font-semibold text-gray-800 mb-2">Peak Move-In Dates</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                    <li>• <span class="font-semibold">Dec 15, 2025</span> - 12 prospects</li>
+                    <li>• <span class="font-semibold">Nov 1 & Nov 15, 2025</span> - 5 prospects each</li>
+                    <li>• <span class="font-semibold">Dec 1, 2025 & Jan 15, 2026</span> - 4 prospects each</li>
+                </ul>
+            </div>`;
+
+            document.getElementById('calendarContent').innerHTML = html;
+        }
+
+        function renderYearView() {
+            const startYear = 2025;
+            const startMonth = 9;
+            
+            const monthsData = [];
+            for (let i = 0; i < 13; i++) {
+                const monthIndex = (startMonth + i) % 12;
+                const year = startYear + Math.floor((startMonth + i) / 12);
+                const monthName = new Date(year, monthIndex, 1).toLocaleString('default', { month: 'long' });
+                
+                const key = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+                const count = monthlyTotals[key] || 0;
+                
+                monthsData.push({
+                    monthName,
+                    year,
+                    monthIndex,
+                    key,
+                    count
+                });
+            }
+
+            const maxCount = Math.max(...monthsData.map(m => m.count));
+
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+            
+            monthsData.forEach(month => {
+                const percentage = maxCount > 0 ? (month.count / maxCount) * 100 : 0;
+                html += `<div onclick="handleMonthClick(${month.year}, ${month.monthIndex})" class="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">${month.monthName}</h3>
+                            <p class="text-xs text-gray-500">${month.year}</p>
+                        </div>
+                        <span class="text-2xl font-bold text-blue-600">${month.count}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div class="bg-blue-500 h-full rounded-full transition-all" style="width: ${percentage}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">${month.count} ${month.count === 1 ? 'prospect' : 'prospects'}</p>
+                </div>`;
+            });
+
+            html += '</div>';
+            document.getElementById('calendarContent').innerHTML = html;
+        }
+
+        window.handleDayClick = function(dateStr) {
+            const prospects = prospectData[dateStr] || [];
+            if (prospects.length > 0) {
+                showProspectModal(dateStr, prospects);
+            }
+        };
+
+        window.handleMonthClick = function(year, monthIndex) {
+            showMonthProspects(year, monthIndex);
+        };
+
+        function goToMonth(year, monthIndex) {
+            currentDate = new Date(year, monthIndex, 1);
+            currentView = 'month';
+            updateView();
+        }
+
+        function updateView() {
+            if (currentView === 'month') {
+                document.getElementById('currentTitle').textContent = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+                document.getElementById('prevBtn').disabled = false;
+                document.getElementById('nextBtn').disabled = false;
+                document.getElementById('prevBtn').style.opacity = '1';
+                document.getElementById('nextBtn').style.opacity = '1';
+                document.getElementById('prevBtn').style.cursor = 'pointer';
+                document.getElementById('nextBtn').style.cursor = 'pointer';
+                renderMonthView();
+            } else {
+                document.getElementById('currentTitle').textContent = 'Oct 2025 - Oct 2026';
+                document.getElementById('prevBtn').disabled = true;
+                document.getElementById('nextBtn').disabled = true;
+                document.getElementById('prevBtn').style.opacity = '0.5';
+                document.getElementById('nextBtn').style.opacity = '0.5';
+                document.getElementById('prevBtn').style.cursor = 'not-allowed';
+                document.getElementById('nextBtn').style.cursor = 'not-allowed';
+                renderYearView();
+            }
+
+            document.getElementById('monthViewBtn').className = currentView === 'month' 
+                ? 'px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-blue-600 text-white shadow-md'
+                : 'px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300';
+            
+            document.getElementById('yearViewBtn').className = currentView === 'year'
+                ? 'px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-blue-600 text-white shadow-md'
+                : 'px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300';
+        }
+
+        document.getElementById('monthViewBtn').addEventListener('click', () => {
+            currentView = 'month';
+            updateView();
+        });
+
+        document.getElementById('yearViewBtn').addEventListener('click', () => {
+            currentView = 'year';
+            updateView();
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (currentView === 'month') {
+                currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+                updateView();
+            }
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentView === 'month') {
+                currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                updateView();
+            }
+        });
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('prospectModal').classList.remove('active');
+        });
+
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('prospectModal');
+            if (event.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+
+        updateView();
+    </script>
+</body>
+</html>
