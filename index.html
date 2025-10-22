@@ -147,8 +147,24 @@
     </script>
 
     <script>
-        let prospectData = JSON.parse(document.getElementById('prospectDataScript').textContent);
-        let moveInData = [
+        // Load data from localStorage if available, otherwise use default
+        let savedData = localStorage.getItem('calendarData');
+        let prospectData, moveInData, lastUpdatedDate;
+        
+        console.log('Checking localStorage...', savedData ? 'Found saved data' : 'No saved data');
+        
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                prospectData = parsed.prospectData;
+                moveInData = parsed.moveInData;
+                lastUpdatedDate = parsed.lastUpdated;
+                console.log('Loaded from localStorage. Last updated:', lastUpdatedDate);
+            } catch (e) {
+                console.error('Error parsing saved data:', e);
+                // If there's an error parsing, use default data
+                prospectData = JSON.parse(document.getElementById('prospectDataScript').textContent);
+                moveInData = [
             { date: "2025-02-15", count: 1 },
             { date: "2025-10-01", count: 1 },
             { date: "2025-10-15", count: 2 },
@@ -181,6 +197,49 @@
             { date: "2026-05-15", count: 1 },
             { date: "2026-06-15", count: 1 }
         ];
+                lastUpdatedDate = "10/21/2025";
+            }
+        } else {
+            // Use default data from script tag
+            prospectData = JSON.parse(document.getElementById('prospectDataScript').textContent);
+            moveInData = [
+            { date: "2025-02-15", count: 1 },
+            { date: "2025-10-01", count: 1 },
+            { date: "2025-10-15", count: 2 },
+            { date: "2025-10-21", count: 1 },
+            { date: "2025-10-25", count: 3 },
+            { date: "2025-10-26", count: 2 },
+            { date: "2025-10-31", count: 2 },
+            { date: "2025-11-01", count: 5 },
+            { date: "2025-11-02", count: 1 },
+            { date: "2025-11-05", count: 1 },
+            { date: "2025-11-15", count: 5 },
+            { date: "2025-11-25", count: 1 },
+            { date: "2025-11-30", count: 1 },
+            { date: "2025-12-01", count: 4 },
+            { date: "2025-12-13", count: 1 },
+            { date: "2025-12-15", count: 12 },
+            { date: "2025-12-25", count: 1 },
+            { date: "2025-12-31", count: 1 },
+            { date: "2026-01-05", count: 1 },
+            { date: "2026-01-12", count: 1 },
+            { date: "2026-01-15", count: 4 },
+            { date: "2026-01-25", count: 2 },
+            { date: "2026-02-01", count: 1 },
+            { date: "2026-02-09", count: 2 },
+            { date: "2026-02-15", count: 3 },
+            { date: "2026-03-01", count: 1 },
+            { date: "2026-03-08", count: 2 },
+            { date: "2026-03-15", count: 2 },
+            { date: "2026-03-31", count: 1 },
+            { date: "2026-05-15", count: 1 },
+            { date: "2026-06-15", count: 1 }
+        ];
+            lastUpdatedDate = "10/21/2025";
+        }
+
+        // Set the last updated date on page load
+        document.getElementById('lastUpdated').textContent = lastUpdatedDate;
 
         let currentDate = new Date(2025, 9, 1);
         let currentView = 'month';
@@ -274,6 +333,14 @@
                         const today = new Date();
                         const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
                         document.getElementById('lastUpdated').textContent = formattedDate;
+                        lastUpdatedDate = formattedDate;
+                        
+                        // Save to localStorage
+                        localStorage.setItem('calendarData', JSON.stringify({
+                            prospectData: newProspectData,
+                            moveInData: moveInData,
+                            lastUpdated: formattedDate
+                        }));
                         
                         // Refresh the view
                         updateView();
