@@ -222,7 +222,20 @@
                             const moveInDate = row['Post-Tour Move In Date'];
                             if (!moveInDate) return;
                             
-                            const date = new Date(moveInDate);
+                            // Parse date more carefully to avoid timezone issues
+                            let date;
+                            if (typeof moveInDate === 'string') {
+                                // If it's a string like "2025-12-15 00:00"
+                                const parts = moveInDate.split(' ')[0].split('-');
+                                if (parts.length === 3) {
+                                    date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                                } else {
+                                    date = new Date(moveInDate);
+                                }
+                            } else {
+                                date = new Date(moveInDate);
+                            }
+                            
                             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                             
                             if (!newProspectData[dateStr]) {
@@ -424,7 +437,7 @@
 
         function getMoveInCount(year, month, day) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const found = moveInData.find(d => d.date.startsWith(dateStr));
+            const found = moveInData.find(d => d.date === dateStr);
             return found ? found.count : 0;
         }
 
@@ -468,14 +481,31 @@
             }
 
             html += '</div>';
-            html += `<div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h3 class="font-semibold text-gray-800 mb-2">Peak Move-In Dates</h3>
-                <ul class="text-sm text-gray-700 space-y-1">
-                    <li>• <span class="font-semibold">Dec 15, 2025</span> - 12 prospects</li>
-                    <li>• <span class="font-semibold">Nov 1 & Nov 15, 2025</span> - 5 prospects each</li>
-                    <li>• <span class="font-semibold">Dec 1, 2025 & Jan 15, 2026</span> - 4 prospects each</li>
-                </ul>
-            </div>`;
+            
+            // Generate dynamic peak dates
+            const topDates = [...moveInData]
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 3);
+            
+            if (topDates.length > 0) {
+                html += `<div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <h3 class="font-semibold text-gray-800 mb-2">Peak Move-In Dates</h3>
+                    <ul class="text-sm text-gray-700 space-y-1">`;
+                
+                topDates.forEach(item => {
+                    // Parse the date string directly without timezone conversion
+                    const parts = item.date.split('-');
+                    const year = parseInt(parts[0]);
+                    const month = parseInt(parts[1]) - 1;
+                    const day = parseInt(parts[2]);
+                    const date = new Date(year, month, day);
+                    
+                    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    html += `<li>• <span class="font-semibold">${formattedDate}</span> - ${item.count} ${item.count === 1 ? 'prospect' : 'prospects'}</li>`;
+                });
+                
+                html += `</ul></div>`;
+            }
 
             document.getElementById('calendarContent').innerHTML = html;
         }
